@@ -409,6 +409,13 @@ function formatDate(date = new Date()) {
 const logger = new Logger({});
 const schema = skap.command({
     "file name": skap.positional(0).description("Target file").required(),
+    includeEditTime: skap.boolean("-e").description("include edit time below signature"),
+    height: skap.number("-h").description("height of image").default(20),
+    width: skap.number("-w").description("width of image").default(40),
+    outputOnly: skap.boolean("-O").description("output signature to stdout"),
+    debug: skap.boolean("-D").description("output component sdf's to stdout"),
+    boxCharset: skap.string("-B").description("provide box charset, order: <┌┬┐┤┘┴└├>"),
+    footer: skap.string("--footer").description("message below image").default(""),
     asciiString: skap.string("--ascii-map").description("characters to be used for ascii"),
     grayscaleUnicode: skap.boolean("--grayscale-unicode").description("use grayscale unicode charset <▁▂▃▄▅▆▇█>"),
     quadrantUnicode: skap.boolean("--quadrant-unicode").description("use quadrant unicode charset < ▖▞▐▟▙▉>"),
@@ -417,12 +424,7 @@ const schema = skap.command({
     kanjiCharset: skap.boolean("--kanji").description("use kanji charset <　・ㇸ一ㇵヘシミ丁ビ火せ山允汎洪労李和耗奏群陽義慶覇>"),
     kanaCharset: skap.boolean("--kana").description("use kana charset <　・ㇸㇳノㇸㇱㇷっこャいうパスチゴぞずなぜおゐゑあぼ>"),
     smallAscii: skap.boolean("--small-ascii").description("use small ascii charset <..,:-=+*#%@>"),
-    footer: skap.string("--footer").description("message below image").default(""),
-    includeEditTime: skap.boolean("-e").description("include edit time below signature"),
-    height: skap.number("-h").description("height of image").default(20),
-    width: skap.number("-w").description("width of image").default(40),
-    outputOnly: skap.boolean("-O").description("output signature to stdout"),
-    debug: skap.boolean("-D").description("output component sdf's to stdout")
+    unicodeBox: skap.boolean("--unicode-box").description("unicode box set <┌─┐│┘─└│>"),
 });
 const cmd = schema.parse(Deno.args, {
     customError: (e) => {
@@ -462,6 +464,14 @@ if (cmd.brailleUnicode)
 if (cmd.smallAscii)
     STRING = " ..,:-=+*#%@";
 
+let boxset = "+-+|+-+|";
+if (cmd.boxCharset !== undefined) {
+    boxset = cmd.boxCharset;
+}
+if (cmd.unicodeBox) {
+    boxset = "┌─┐│┘─└│";
+}
+
 const sourceCode = Deno.readTextFileSync(cmd["file name"]);
 const tree = parser.parse(sourceCode);
 const scene = traverse(tree.rootNode);
@@ -474,20 +484,20 @@ output += "// begin signature\n"
 
 const r = render(WIDTH, HEIGHT, scene, STRING, FULL_WIDTH);
 
-output += "// +";
+output += `// ${boxset[0]}`;
 for (let i = 1; i <= WIDTH; i++)
-    output += "-";
-output += "+\n";
+    output += boxset[1];
+output += `${boxset[2]}\n`;
 
-for (const l of r.split("\n")) {
+for (const l of r.split(`\n`)) {
     if (l.length)
-        output += `// |${l}|\n`;
+        output += `// ${boxset[7]}${l}${boxset[3]}\n`;
 }
 
-output += "// +";
+output += `// ${boxset[6]}`;
 for (let i = 1; i <= WIDTH; i++)
-    output += "-";
-output += "+\n";
+    output += boxset[5];
+output += `${boxset[4]}\n`;
 
 if (cmd.footer) output += `// ${cmd.footer}\n`;
 if (cmd.includeEditTime) {
