@@ -5,7 +5,11 @@ Default behaviour automatically appends signature onto source file, or replaces 
 
 Options:
 ```bash
-$ deno run -A main.ts
+$ deno compile -A main.ts # if you're worried just read the code
+...
+Compile main.ts to code-signature
+...
+$ ./code-signature <file name>
 ARGUMENTS:
   <file name> (required)
     Target file
