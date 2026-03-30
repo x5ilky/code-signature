@@ -390,7 +390,8 @@ const logger = new Logger({});
 const schema = skap.command({
     "file name": skap.positional(0).description("Target file").required(),
     asciiString: skap.string("--ascii-map").description("characters to be used for ascii"),
-    grayscaleUnicode: skap.boolean("--grayscale-unicode").description("use grayscale unicode charset"),
+    grayscaleUnicode: skap.boolean("--grayscale-unicode").description("use grayscale unicode charset <▁▂▃▄▅▆▇█>"),
+    smallAscii: skap.boolean("--small-ascii").description("use small ascii charset <..,:-=+*#%@>"),
     footer: skap.string("--footer").description("message below image").default(""),
     includeEditTime: skap.boolean("-e").description("include edit time below signature"),
     height: skap.number("-h").description("height of image").default(20),
@@ -409,10 +410,10 @@ parser.setLanguage(CppParser as Language);
 
 let STRING = cmd.asciiString ?? " .'`^,:;Il!i~+_-?1)(|\\/tfjrxbkhao*#MW&8%B@$";
 
-// const STRING = ".'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao#MW&8%B@$";
 if (cmd.grayscaleUnicode)
-    STRING = " ▁▂▃▄▅▆▇█";
-// const STRING = `..,:-=+*#%@`;
+    STRING = "▁▂▃▄▅▆▇█";
+if (cmd.smallAscii)
+    STRING = "..,:-=+*#%@";
 
 const sourceCode = Deno.readTextFileSync(cmd["file name"]);
 const tree = parser.parse(sourceCode);
