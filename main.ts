@@ -346,15 +346,18 @@ function centroid(width: number, height: number, sdf: SDFObject) {
     return [sx / c, sy / c, Math.sqrt(md), maxdist];
 }
 
-function render(width: number, height: number, sdf: SDFObject, asciiMap: string) {
+function render(width: number, height: number, sdf: SDFObject, asciiMap: string, fullWidth: boolean) {
     let out = "";
 
+    if (fullWidth)
+        width = Math.ceil(width/2);
     const [dx, dy, scale, md] = centroid(width, height, sdf);
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             let uvx = (x + 0.5) / height * 2 - width / height;
             let uvy = (y + 0.5) / height * 2 - 1;
             uvx *= 1 / 2;
+            if (fullWidth) uvx *= 2;
 
             const amp = 0.08;
             const freq = 8.0;
@@ -408,7 +411,11 @@ const schema = skap.command({
     "file name": skap.positional(0).description("Target file").required(),
     asciiString: skap.string("--ascii-map").description("characters to be used for ascii"),
     grayscaleUnicode: skap.boolean("--grayscale-unicode").description("use grayscale unicode charset <▁▂▃▄▅▆▇█>"),
+    quadrantUnicode: skap.boolean("--quadrant-unicode").description("use quadrant unicode charset < ▖▞▐▟▙▉>"),
     brailleUnicode: skap.boolean("--braille-unicode").description("use braille unicode charset <⠀⠁⠃⠇⠏⠟⠿⣿>"),
+    chineseCharset: skap.boolean("--chinese").description("use chinese charset <　一八二十八入三仁今公巾外於弔区刹他移慈敗棟郵優翻腫>"),
+    kanjiCharset: skap.boolean("--kanji").description("use kanji charset <　・ㇸ一ㇵヘシミ丁ビ火せ山允汎洪労李和耗奏群陽義慶覇>"),
+    kanaCharset: skap.boolean("--kana").description("use kana charset <　・ㇸㇳノㇸㇱㇷっこャいうパスチゴぞずなぜおゐゑあぼ>"),
     smallAscii: skap.boolean("--small-ascii").description("use small ascii charset <..,:-=+*#%@>"),
     footer: skap.string("--footer").description("message below image").default(""),
     includeEditTime: skap.boolean("-e").description("include edit time below signature"),
@@ -424,6 +431,9 @@ const cmd = schema.parse(Deno.args, {
     }
 })
 
+let HEIGHT = cmd.height, WIDTH = cmd.width;
+let FULL_WIDTH = false;
+
 const parser = new Parser();
 parser.setLanguage(CppParser as Language);
 
@@ -431,6 +441,22 @@ let STRING = cmd.asciiString ?? "  .'`^,:;Il!i~+_-?1)(|\\/tfjrxbkhao*#MW&8%B@$";
 
 if (cmd.grayscaleUnicode)
     STRING = " ▁▂▃▄▅▆▇█";
+if (cmd.quadrantUnicode)
+    STRING = " ▖▞▐▟▙▉"
+if (cmd.chineseCharset) {
+    STRING = "　　一八二十八入三仁今公巾外於弔区刹他移慈敗棟郵優翻腫"
+    FULL_WIDTH = true;
+}
+if (cmd.kanjiCharset) {
+    STRING = "　　・ㇸ一ㇵヘシミ丁ビ火せ山允汎洪労李和耗奏群陽義慶覇"
+    FULL_WIDTH = true;
+}
+if (cmd.kanaCharset) {
+    STRING = "　　・ㇸㇳノㇸㇱㇷっこャいうパスチゴぞずなぜおゐゑあぼ"
+    FULL_WIDTH = true;
+}
+if (cmd.grayscaleUnicode)
+    STRING = "";
 if (cmd.brailleUnicode)
     STRING = `⠀⠁⠃⠇⠏⠟⠿⣿`;
 if (cmd.smallAscii)
@@ -446,8 +472,7 @@ if (cmd.debug) {
 let output = "";
 output += "// begin signature\n"
 
-const HEIGHT = cmd.height, WIDTH = cmd.width;
-const r = render(WIDTH, HEIGHT, scene, STRING);
+const r = render(WIDTH, HEIGHT, scene, STRING, FULL_WIDTH);
 
 output += "// +";
 for (let i = 1; i <= WIDTH; i++)

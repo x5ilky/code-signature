@@ -1,9 +1,12 @@
 # Code Signature Generator
+
 Obtuse naming scheme for a thing that does what you think it does.
 
-Default behaviour automatically appends signature onto source file, or replaces existing signature.
+Default behaviour automatically appends signature onto source file, or replaces
+existing signature.
 
 Options:
+
 ```bash
 $ deno compile -A main.ts # if you're worried just read the code
 ...
@@ -30,4 +33,3 @@ ARGUMENTS:
   -O (optional)
     output signature to stdout
 ```
-

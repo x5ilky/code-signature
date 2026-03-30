@@ -3,7 +3,7 @@
  * GitHub: https://github.com/x5ilky/SkSFL
  * Created: 16:03:47 GMT+1100 (Australian Eastern Daylight Time)
  * Modules: SkAn, SkLg, SkAp
- * 
+ *
  * Created without care by x5ilky
  */
 
@@ -108,20 +108,16 @@ function hexToRgb(hex: string) {
     ] as const;
 }
 
-
-
-
-
 export type LoggerTag = {
-    name: string,
-    color: [number, number, number],
-    priority: number
-}
+    name: string;
+    color: [number, number, number];
+    priority: number;
+};
 export type LoggerConfig = {
     prefixTags: LoggerTag[];
     suffixTags: LoggerTag[];
-    levels: {[level: number]: LoggerTag};
-    
+    levels: { [level: number]: LoggerTag };
+
     tagPrefix: string;
     tagSuffix: string;
 
@@ -129,7 +125,7 @@ export type LoggerConfig = {
     endTag: LoggerTag;
 
     hideThreshold: number;
-}
+};
 
 export class Logger {
     config: LoggerConfig;
@@ -138,10 +134,10 @@ export class Logger {
         this.config = config as LoggerConfig;
         this.config.hideThreshold ??= 0;
         this.config.levels ??= {
-            0: {color: [77, 183, 53], name: "DEBUG", priority: 0},
-            10: {color: [54, 219, 180], name: "INFO", priority: 10},
-            20: {color: [219, 158, 54], name: "WARN", priority: 20},
-            30: {color: [219, 54, 54], name: "ERROR", priority: 30}
+            0: { color: [77, 183, 53], name: "DEBUG", priority: 0 },
+            10: { color: [54, 219, 180], name: "INFO", priority: 10 },
+            20: { color: [219, 158, 54], name: "WARN", priority: 20 },
+            30: { color: [219, 54, 54], name: "ERROR", priority: 30 },
         };
         this.config.tagPrefix ??= "[";
         this.config.tagSuffix ??= "]";
@@ -149,12 +145,12 @@ export class Logger {
         this.config.startTag ??= {
             color: [219, 197, 54],
             name: "START",
-            priority: -10
+            priority: -10,
         };
         this.config.endTag ??= {
             color: [82, 219, 54],
             name: "END",
-            priority: -10
+            priority: -10,
         };
         this.maxTagLengths = [];
     }
@@ -162,16 +158,28 @@ export class Logger {
     // deno-lint-ignore no-explicit-any
     printWithTags(tags: LoggerTag[], ...args: any[]) {
         const tag = (a: LoggerTag, index: number) => {
-            let raw = `${this.config.tagPrefix}${a.name}${this.config.tagSuffix}`;
-            if (this.maxTagLengths[index] === undefined || raw.length > this.maxTagLengths[index]) {
+            let raw =
+                `${this.config.tagPrefix}${a.name}${this.config.tagSuffix}`;
+            if (
+                this.maxTagLengths[index] === undefined ||
+                raw.length > this.maxTagLengths[index]
+            ) {
                 this.maxTagLengths[index] = raw.length;
             }
-            raw = raw.padEnd(this.maxTagLengths[index], " ");;
-            return `${Ansi.rgb(a.color[0], a.color[1], a.color[2])}${raw}${Ansi.reset}`;
-        }
-        const lines = args.join(' ').split("\n");
+            raw = raw.padEnd(this.maxTagLengths[index], " ");
+            return `${
+                Ansi.rgb(a.color[0], a.color[1], a.color[2])
+            }${raw}${Ansi.reset}`;
+        };
+        const lines = args.join(" ").split("\n");
         for (const ln of lines) {
-            console.log(`${tags.map((a, i) => tag(a, i).padStart(this.maxTagLengths[i], "#")).join(' ')} ${ln}`);
+            console.log(
+                `${
+                    tags.map((a, i) =>
+                        tag(a, i).padStart(this.maxTagLengths[i], "#")
+                    ).join(" ")
+                } ${ln}`,
+            );
         }
     }
 
@@ -180,9 +188,9 @@ export class Logger {
         this.printWithTags(
             [
                 ...(this.config.prefixTags ?? []),
-                this.config.levels![10]
+                this.config.levels![10],
             ],
-            ...args
+            ...args,
         );
     }
 
@@ -191,9 +199,9 @@ export class Logger {
         this.printWithTags(
             [
                 ...(this.config.prefixTags ?? []),
-                this.config.levels![0]
+                this.config.levels![0],
             ],
-            ...args
+            ...args,
         );
     }
 
@@ -202,9 +210,9 @@ export class Logger {
         this.printWithTags(
             [
                 ...(this.config.prefixTags ?? []),
-                this.config.levels![20]
+                this.config.levels![20],
             ],
-            ...args
+            ...args,
         );
     }
 
@@ -213,9 +221,9 @@ export class Logger {
         this.printWithTags(
             [
                 ...(this.config.prefixTags ?? []),
-                this.config.levels![30]
+                this.config.levels![30],
             ],
-            ...args
+            ...args,
         );
     }
 
@@ -224,9 +232,9 @@ export class Logger {
         this.printWithTags(
             [
                 ...(this.config.prefixTags ?? []),
-                this.config.levels![level]
+                this.config.levels![level],
             ],
-            ...args
+            ...args,
         );
     }
 
@@ -235,9 +243,9 @@ export class Logger {
             [
                 ...(this.config.prefixTags ?? []),
                 this.config.levels![level],
-                this.config.startTag!
+                this.config.startTag!,
             ],
-            ...args
+            ...args,
         );
     }
     end(level: number, ...args: string[]) {
@@ -245,9 +253,9 @@ export class Logger {
             [
                 ...(this.config.prefixTags ?? []),
                 this.config.levels![level],
-                this.config.endTag!
+                this.config.endTag!,
             ],
-            ...args
+            ...args,
         );
     }
 }
@@ -256,13 +264,10 @@ export const LogLevel = {
     DEBUG: 0,
     INFO: 10,
     WARN: 20,
-    ERROR: 30
+    ERROR: 30,
 };
 
-
 // (S)il(k) (A)rgument (P)arser
-
-
 
 // deno-lint-ignore no-namespace
 export namespace skap {
@@ -270,50 +275,51 @@ export namespace skap {
         customError: (error: string) => void;
     };
 
-    type SkapRequired<T extends SkapArgument> = T & {__required: true};
-    type SkapMulti<T extends SkapArgument>  = T & {__multi: true};
-    type SkapOptional<T extends SkapArgument> = (T extends SkapRequired<infer U> ? U : T) & {__required: false};
-    type SkapArgument = 
-        SkapString<string> 
-      | SkapNumber<string>
-      | SkapBoolean<string>
-      | SkapPositional<number>
-      | SkapRest
-      | SkapKV
-      | SkapSubcommand<SkapSubcommandShape>;
-    function isNotSkapSubcommand<T extends SkapArgument>(arg: T): arg is Exclude<T, SkapSubcommand<SkapSubcommandShape>> {
+    type SkapRequired<T extends SkapArgument> = T & { __required: true };
+    type SkapMulti<T extends SkapArgument> = T & { __multi: true };
+    type SkapOptional<T extends SkapArgument> =
+        & (T extends SkapRequired<infer U> ? U : T)
+        & { __required: false };
+    type SkapArgument =
+        | SkapString<string>
+        | SkapNumber<string>
+        | SkapBoolean<string>
+        | SkapPositional<number>
+        | SkapRest
+        | SkapKV
+        | SkapSubcommand<SkapSubcommandShape>;
+    function isNotSkapSubcommand<T extends SkapArgument>(
+        arg: T,
+    ): arg is Exclude<T, SkapSubcommand<SkapSubcommandShape>> {
         return !(arg instanceof SkapSubcommand);
     }
-    type SkapCommandShape = {[name: string]: SkapArgument};
-    type SkapSubcommandShape = {[name: string]: SkapCommand<SkapCommandShape>};
+    type SkapCommandShape = { [name: string]: SkapArgument };
+    type SkapSubcommandShape = {
+        [name: string]: SkapCommand<SkapCommandShape>;
+    };
 
     export type SkapInfer<T extends SkapCommand<SkapCommandShape>> = {
-        [K in keyof T["shape"]]: 
-            T["shape"][K] extends SkapArgument
-          ? SkapInferArgument<T["shape"][K]>
-          : never
+        [K in keyof T["shape"]]: T["shape"][K] extends SkapArgument
+            ? SkapInferArgument<T["shape"][K]>
+            : never;
     };
-    type SkapInferArgument<T extends SkapArgument> = 
-        T extends SkapMulti<infer U extends SkapArgument>
-      ? (SkapInferArgument<U>)[]
-      : T extends SkapRequired<infer U extends SkapArgument>
-      ? Require<SkapInferArgument<U>>
-      : T extends SkapKV
-      ? { key: string, value: string } | undefined
-      : T extends SkapString<string> 
-      ? string | undefined 
-      : T extends SkapPositional<number> 
-      ? string | undefined 
-      : T extends SkapNumber<string>
-      ? number | undefined
-      : T extends SkapBoolean<string>
-      ? boolean
-      : T extends SkapSubcommand<infer U extends SkapSubcommandShape> ? {commands: {
-            [K in keyof U]: SkapInfer<U[K]> | undefined
-        }, selected: keyof U}
-      : T extends SkapRest
-      ? string[]
-      : never;
+    type SkapInferArgument<T extends SkapArgument> = T extends
+        SkapMulti<infer U extends SkapArgument> ? (SkapInferArgument<U>)[]
+        : T extends SkapRequired<infer U extends SkapArgument>
+            ? Require<SkapInferArgument<U>>
+        : T extends SkapKV ? { key: string; value: string } | undefined
+        : T extends SkapString<string> ? string | undefined
+        : T extends SkapPositional<number> ? string | undefined
+        : T extends SkapNumber<string> ? number | undefined
+        : T extends SkapBoolean<string> ? boolean
+        : T extends SkapSubcommand<infer U extends SkapSubcommandShape> ? {
+                commands: {
+                    [K in keyof U]: SkapInfer<U[K]> | undefined;
+                };
+                selected: keyof U;
+            }
+        : T extends SkapRest ? string[]
+        : never;
     type Require<T> = Exclude<T, undefined>;
 
     /**
@@ -327,7 +333,10 @@ export namespace skap {
      * @param shape Shape of the command, similar to zod
      * @returns above
      */
-    export function command<T extends SkapCommandShape>(shape: T, description: string = ""): SkapCommand<T> {
+    export function command<T extends SkapCommandShape>(
+        shape: T,
+        description: string = "",
+    ): SkapCommand<T> {
         return new SkapCommand(shape, description);
     }
     /**
@@ -339,9 +348,12 @@ export namespace skap {
      *     })
      * })
      * @param shape Shape of subcommand
-     * @returns 
+     * @returns
      */
-    export function subcommand<T extends SkapSubcommandShape>(shape: T, description: string = ""): SkapSubcommand<T> {
+    export function subcommand<T extends SkapSubcommandShape>(
+        shape: T,
+        description: string = "",
+    ): SkapSubcommand<T> {
         return new SkapSubcommand(shape, description);
     }
     export function string<T extends string>(name: T): SkapString<T> {
@@ -357,11 +369,12 @@ export namespace skap {
         return new SkapBoolean(name);
     }
     /**
-     * 
      * @param index Order of positional argument
      * @returns SkapPositional instance
      */
-    export function positional<T extends number>(index: T): SkapPositional<number> {
+    export function positional<T extends number>(
+        index: T,
+    ): SkapPositional<number> {
         return new SkapPositional(index);
     }
     /**
@@ -378,7 +391,11 @@ export namespace skap {
         __description: string;
         __required: boolean;
         __multi: boolean;
-        constructor(name: T, description: string = "", required: boolean = false) {
+        constructor(
+            name: T,
+            description: string = "",
+            required: boolean = false,
+        ) {
             this.name = name;
             this.__description = description;
             this.__required = required;
@@ -401,7 +418,7 @@ export namespace skap {
         }
         default(value: string): SkapRequired<this> {
             this.__default = value;
-            return  this as SkapRequired<this>;
+            return this as SkapRequired<this>;
         }
         multi(): SkapMulti<this> {
             this.__multi = true;
@@ -410,11 +427,15 @@ export namespace skap {
     }
     class SkapKV {
         name: string;
-        __default: {key: string, value: string} | undefined;
+        __default: { key: string; value: string } | undefined;
         __description: string;
         __required: boolean;
         __multi: boolean;
-        constructor(initial: string, description: string = "", required: boolean = false) {
+        constructor(
+            initial: string,
+            description: string = "",
+            required: boolean = false,
+        ) {
             this.name = initial;
             this.__description = description;
             this.__required = required;
@@ -435,9 +456,9 @@ export namespace skap {
             this.__description = description;
             return this;
         }
-        default(value: {key: string, value: string}): SkapRequired<this> {
+        default(value: { key: string; value: string }): SkapRequired<this> {
             this.__default = value;
-            return  this as SkapRequired<this>;
+            return this as SkapRequired<this>;
         }
         multi(): SkapMulti<this> {
             this.__multi = true;
@@ -450,7 +471,11 @@ export namespace skap {
         __default: number | undefined;
         __required: boolean;
         __multi: boolean;
-        constructor(name: T, description: string = "", required: boolean = false) {
+        constructor(
+            name: T,
+            description: string = "",
+            required: boolean = false,
+        ) {
             this.name = name;
             this.__description = description;
             this.__required = required;
@@ -483,7 +508,11 @@ export namespace skap {
         name: T;
         __description: string;
         __required: boolean;
-        constructor(name: T, description: string = "", required: boolean = false) {
+        constructor(
+            name: T,
+            description: string = "",
+            required: boolean = false,
+        ) {
             this.name = name;
             this.__description = description;
             this.__required = required;
@@ -497,7 +526,11 @@ export namespace skap {
         name: T;
         __description: string;
         __required: boolean;
-        constructor(index: T, description: string = "", required: boolean = false) {
+        constructor(
+            index: T,
+            description: string = "",
+            required: boolean = false,
+        ) {
             this.name = index;
             this.__description = description;
             this.__required = required;
@@ -533,7 +566,11 @@ export namespace skap {
         shape: T;
         __description: string;
         __required: boolean;
-        constructor(shape: T, description: string = "", required: boolean = false) {
+        constructor(
+            shape: T,
+            description: string = "",
+            required: boolean = false,
+        ) {
             this.shape = shape;
             this.__description = description;
             this.__required = required;
@@ -565,16 +602,22 @@ export namespace skap {
                         throw new Error("SkAp: Only one subcommand is allowed");
                     }
                     for (const subcommandName in shape[argName].shape) {
-                        SkapCommand.check(shape[argName].shape[subcommandName].shape);
+                        SkapCommand.check(
+                            shape[argName].shape[subcommandName].shape,
+                        );
                     }
                 }
                 if (shape[argName] instanceof SkapRest) {
                     if (subcs) {
-                        throw new Error("SkAp: Cannot have subcommands and rest arguments due to confusion")
+                        throw new Error(
+                            "SkAp: Cannot have subcommands and rest arguments due to confusion",
+                        );
                     }
                     rest++;
                     if (rest > 1) {
-                        throw new Error("SkAp: Only one rest argument is allowed")
+                        throw new Error(
+                            "SkAp: Only one rest argument is allowed",
+                        );
                     }
                 }
             }
@@ -598,9 +641,10 @@ export namespace skap {
                     // deno-lint-ignore no-explicit-any
                     const commands: any = {};
                     for (const subcommandName in argShape.shape) {
-                        commands[subcommandName] = argShape.shape[subcommandName].emptyBase();
+                        commands[subcommandName] = argShape
+                            .shape[subcommandName].emptyBase();
                     }
-                    out[argName] = {selected: undefined, commands: commands};
+                    out[argName] = { selected: undefined, commands: commands };
                 } else if (argShape instanceof SkapBoolean) {
                     out[argName] = false;
                 } else if (argShape instanceof SkapPositional) {
@@ -611,12 +655,22 @@ export namespace skap {
             }
             return out;
         }
-        private parseBase(args: string[], settings: ParseSettings): [SkapInfer<this>, string[]] {
+        private parseBase(
+            args: string[],
+            settings: ParseSettings,
+        ): [SkapInfer<this>, string[]] {
             // deno-lint-ignore no-explicit-any
             const out: any = this.emptyBase();
 
-            const positional = Object.entries(this.shape).filter(([a, b]) => b instanceof SkapPositional).toSorted(([_n, a], [_, b]) => (a as SkapPositional<number>).name - (b as SkapPositional<number>).name);
-            const rest = Object.entries(this.shape).find(([b, a]) => a instanceof SkapRest);
+            const positional = Object.entries(this.shape).filter(([a, b]) =>
+                b instanceof SkapPositional
+            ).toSorted(([_n, a], [_, b]) =>
+                (a as SkapPositional<number>).name -
+                (b as SkapPositional<number>).name
+            );
+            const rest = Object.entries(this.shape).find(([b, a]) =>
+                a instanceof SkapRest
+            );
 
             while (args.length) {
                 const arg = args.shift();
@@ -625,28 +679,39 @@ export namespace skap {
                     const argShape = this.shape[argName];
                     if (argShape instanceof SkapString) {
                         if (arg == argShape.name) {
-                            if (argShape.__multi) out[argName].push(args.shift());
-                            else out[argName] = args.shift();
+                            if (argShape.__multi) {
+                                out[argName].push(args.shift());
+                            } else out[argName] = args.shift();
                             did = true;
                         }
                     } else if (argShape instanceof SkapNumber) {
                         if (arg == argShape.name) {
                             try {
-                                if (argShape.__multi) out[argName].push(Number(args.shift()));
-                                else out[argName] = Number(args.shift());
+                                if (argShape.__multi) {
+                                    out[argName].push(Number(args.shift()));
+                                } else out[argName] = Number(args.shift());
                                 did = true;
                             } catch (e) {
-                                settings.customError!(`Invalid number argument ${argShape.name}`);
+                                settings.customError!(
+                                    `Invalid number argument ${argShape.name}`,
+                                );
                             }
                         }
                     } else if (argShape instanceof SkapSubcommand) {
                         for (const subcommandName in argShape.shape) {
                             if (arg == subcommandName) {
-                                const [subcommandOut, subcommandRest] = argShape.shape[subcommandName].parseBase(args, settings);
+                                const [subcommandOut, subcommandRest] = argShape
+                                    .shape[subcommandName].parseBase(
+                                        args,
+                                        settings,
+                                    );
                                 // deno-lint-ignore no-explicit-any
                                 const o: any = {};
                                 o[subcommandName] = subcommandOut;
-                                out[argName] = {selected: subcommandName, commands: o};
+                                out[argName] = {
+                                    selected: subcommandName,
+                                    commands: o,
+                                };
                                 args = subcommandRest;
                                 break;
                             }
@@ -659,9 +724,11 @@ export namespace skap {
                         }
                     } else if (argShape instanceof SkapKV) {
                         if (arg?.startsWith(argShape.name)) {
-                            const [key, value] = arg.slice(argShape.name.length).split("=", 2);
-                            if (argShape.__multi) out[argName].push({key, value});
-                            else out[argName] = {key, value};
+                            const [key, value] = arg.slice(argShape.name.length)
+                                .split("=", 2);
+                            if (argShape.__multi) {
+                                out[argName].push({ key, value });
+                            } else out[argName] = { key, value };
                             did = true;
                         }
                     }
@@ -673,50 +740,64 @@ export namespace skap {
                         out[argName] = arg;
                     } else if (rest !== undefined) {
                         out[rest[0]].push(arg);
-                    }
-                    else {
-                        settings.customError(`Too many arguments\n${this.usage()}`)
+                    } else {
+                        settings.customError(
+                            `Too many arguments\n${this.usage()}`,
+                        );
                     }
                 }
             }
-            
 
             for (const argName in this.shape) {
                 const argShape = this.shape[argName];
                 if (argShape instanceof SkapString) {
                     if (out[argName] === undefined && argShape.__required) {
-                        settings.customError!(`Missing required string argument ${argShape.name}\n${this.usage()}`);
+                        settings.customError!(
+                            `Missing required string argument ${argShape.name}\n${this.usage()}`,
+                        );
                     }
                 } else if (argShape instanceof SkapNumber) {
                     if (out[argName] === undefined && argShape.__required) {
-                        settings.customError!(`Missing required number argument ${argShape.name}\n${this.usage()}`);
+                        settings.customError!(
+                            `Missing required number argument ${argShape.name}\n${this.usage()}`,
+                        );
                     }
                 } else if (argShape instanceof SkapSubcommand) {
-                    if (out[argName].selected === undefined && argShape.__required) {
-                        settings.customError!(`Missing required subcommand for ${argName}\n${this.usage()}`);
+                    if (
+                        out[argName].selected === undefined &&
+                        argShape.__required
+                    ) {
+                        settings.customError!(
+                            `Missing required subcommand for ${argName}\n${this.usage()}`,
+                        );
                     }
                 } else if (argShape instanceof SkapBoolean) {
                     // pass
                 } else if (argShape instanceof SkapPositional) {
                     if (out[argName] === undefined && argShape.__required) {
-                        settings.customError!(`Missing required positional argument for ${argName}\n${this.usage()}`);
+                        settings.customError!(
+                            `Missing required positional argument for ${argName}\n${this.usage()}`,
+                        );
                     }
                 } else if (argShape instanceof SkapKV) {
                     if (out[argName] === undefined && argShape.__required) {
-                        settings.customError!(`Missing required key-value argument for ${argName}\n${this.usage()}`);
+                        settings.customError!(
+                            `Missing required key-value argument for ${argName}\n${this.usage()}`,
+                        );
                     }
                 }
             }
 
             return [out as SkapInfer<this>, args];
         }
-        parse(args: string[], settings: Partial<ParseSettings> = {
-
-        }): SkapInfer<this> {
+        parse(
+            args: string[],
+            settings: Partial<ParseSettings> = {},
+        ): SkapInfer<this> {
             if (settings.customError === undefined) {
                 settings.customError = (error) => {
                     throw new Error(error);
-                }
+                };
             }
             return this.parseBase(args, settings as ParseSettings)[0];
         }
@@ -732,9 +813,9 @@ export namespace skap {
                 } else if (argShape instanceof SkapSubcommand) {
                     out += `${Ansi.reset}${Ansi.bold} <subcommand>`;
                 } else if (argShape instanceof SkapPositional) {
-                    out += `${Ansi.reset}${Ansi.italic} <${argName}>`
+                    out += `${Ansi.reset}${Ansi.italic} <${argName}>`;
                 } else if (argShape instanceof SkapRest) {
-                    out += `${Ansi.reset}${Ansi.underline} <...${argName}>`
+                    out += `${Ansi.reset}${Ansi.underline} <...${argName}>`;
                 }
             }
             out += `${Ansi.reset}\n`;
@@ -742,21 +823,31 @@ export namespace skap {
         }
         usage(previous: string = "program"): string {
             let out = previous + this.syntax();
-            const args = Object.keys(this.shape).filter(a => isNotSkapSubcommand(this.shape[a]));
+            const args = Object.keys(this.shape).filter((a) =>
+                isNotSkapSubcommand(this.shape[a])
+            );
             if (args.length > 0) {
                 out += `${Ansi.blue}ARGUMENTS:\n${Ansi.reset}`;
                 for (const arg of args) {
                     out += `${Ansi.reset}`;
                     if (this.shape[arg] instanceof SkapString) {
-                        out += `  ${Ansi.bold}${this.shape[arg].name}${Ansi.reset} <string>`;
+                        out += `  ${Ansi.bold}${
+                            this.shape[arg].name
+                        }${Ansi.reset} <string>`;
                     } else if (this.shape[arg] instanceof SkapKV) {
-                        out += `  ${Ansi.bold}${this.shape[arg].name}${Ansi.reset}<key>=<value>`;
+                        out += `  ${Ansi.bold}${
+                            this.shape[arg].name
+                        }${Ansi.reset}<key>=<value>`;
                     } else if (this.shape[arg] instanceof SkapNumber) {
-                        out += `  ${Ansi.bold}${this.shape[arg].name}${Ansi.reset} <number>`;
+                        out += `  ${Ansi.bold}${
+                            this.shape[arg].name
+                        }${Ansi.reset} <number>`;
                     } else if (this.shape[arg] instanceof SkapBoolean) {
-                        out += `  ${Ansi.bold}${this.shape[arg].name}${Ansi.reset}`;
+                        out += `  ${Ansi.bold}${
+                            this.shape[arg].name
+                        }${Ansi.reset}`;
                     } else if (this.shape[arg] instanceof SkapPositional) {
-                        out += `  ${Ansi.bold}<${arg}>${Ansi.reset}`
+                        out += `  ${Ansi.bold}<${arg}>${Ansi.reset}`;
                     } else if (this.shape[arg] instanceof SkapRest) {
                         out += `  ${Ansi.bold}<...${arg}>${Ansi.reset}`;
                     }
@@ -766,21 +857,29 @@ export namespace skap {
                         out += `${Ansi.green} (optional)`;
                     }
                     if (this.shape[arg].__description) {
-                        out += `\n${Ansi.reset}${Ansi.gray}    ${Ansi.italic}${this.shape[arg].__description}`;
+                        out += `\n${Ansi.reset}${Ansi.gray}    ${Ansi.italic}${
+                            this.shape[arg].__description
+                        }`;
                     }
                     out += `${Ansi.reset}\n`;
                 }
             }
-            const subcs = Object.keys(this.shape).filter(a => this.shape[a] instanceof SkapSubcommand);
+            const subcs = Object.keys(this.shape).filter((a) =>
+                this.shape[a] instanceof SkapSubcommand
+            );
             if (subcs.length > 0) {
                 out += "SUBCOMMANDS:\n";
                 for (const subc of subcs) {
                     const shape = this.shape[subc];
                     if (shape instanceof SkapSubcommand) {
                         for (const subcommand in shape.shape) {
-                            out += `  ${subcommand}${shape.shape[subcommand].syntax()}`;
+                            out += `  ${subcommand}${
+                                shape.shape[subcommand].syntax()
+                            }`;
                             if (shape.shape[subcommand].__description !== "") {
-                                out += `${Ansi.italic}    ${Ansi.italic}${shape.shape[subcommand].__description}${Ansi.reset}\n`
+                                out += `${Ansi.italic}    ${Ansi.italic}${
+                                    shape.shape[subcommand].__description
+                                }${Ansi.reset}\n`;
                             }
                         }
                     }
