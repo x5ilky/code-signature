@@ -395,6 +395,7 @@ const schema = skap.command({
     includeEditTime: skap.boolean("-e").description("include edit time below signature"),
     height: skap.number("-h").description("height of image").default(20),
     width: skap.number("-w").description("width of image").default(40),
+    outputOnly: skap.boolean("-O").description("output signature to stdout")
 });
 const cmd = schema.parse(Deno.args, {
     customError: (e) => {
@@ -444,6 +445,10 @@ if (cmd.includeEditTime) {
 }
 output += "// end signature\n"
 
+if (cmd.outputOnly) {
+    console.log(output);
+    Deno.exit(0);
+}
 const FIND_SIGNATURE_REGEX = /\/\/ begin signature.*?\/\/ end signature/gs
 const m = sourceCode.match(FIND_SIGNATURE_REGEX)
 let newSourceCode = "";
@@ -452,4 +457,5 @@ if (m !== null && m.length > 0) {
 } else {
     newSourceCode = sourceCode + "\n" + output;
 }
+
 Deno.writeTextFileSync(cmd["file name"], newSourceCode)
