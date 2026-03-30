@@ -83,11 +83,6 @@ function bound(
 }
 function traverseMetaStatement(node: SyntaxNode): SDFObject {
     let op: SDFObject["type"] = "union";
-    if (cyrb53(node.type) & 1) {
-        op = "union";
-    } else {
-        op = "subtract";
-    }
     if (node.type == "binary_expression") {
         if (cyrb53(node.children[1].type) & 1) {
             op = "smoothUnion";
@@ -99,26 +94,37 @@ function traverseMetaStatement(node: SyntaxNode): SDFObject {
 
     let dir = "hor";
     if (cyrb53(node.type) & 1) dir = "vert";
-    let i = 0, n = node.descendantCount, c = 0;
+    let i = 0, n = node.descendantCount+1, c = 0;
     for (const child of node.children) {
         if (child.type === "comment") continue;
+        const dc = child.descendantCount+1;
         let l = 0, t = 0, w = 2, h = 2, r = 1;
         if (dir === "hor") {
             t = 0;
             l = c / n;
-            w = child.descendantCount / n;
+            w = dc / n;
             h = 1;
+            // r = dc / n;
         }
         if (dir === "vert") {
             l = 0;
             t = c / n;
-            h = child.descendantCount / n;
+            h = dc / n;
             w = 1;
+            // r = dc / n;
         }
-        object = {
+
+        if (cyrb53(child.type) & 1) {
+            op = "union";
+        } else {
+            op = "subtract";
+        }
+        const newChild = bound(traverse(child), l, t, w, h, r);
+        if (object.type === "none") object = newChild;
+        else object = {
             type: op,
             a: object,
-            b: bound(traverse(child), l, t, w, h, r),
+            b: newChild,
             k: 0.3,
         } as SDFObject;
         i++;
@@ -140,14 +146,14 @@ function traverse(node: SyntaxNode): SDFObject {
         default: {
             const hash = cyrb53(node.text) & MASK;
             const pos = (hash / MASK - 0.5) * 2;
-            const r = (cyrb53(node.text + "radius") & MASK) / MASK;
+            const r = (cyrb53(node.text + "radius", node.descendantCount) & MASK) / MASK;
             return { type: "circle", cx: pos, cy: -pos, r };
         }
         case "number_literal": {
             const hash = cyrb53(parseInt(node.text).toString(24)) & MASK;
             const pos = (hash / MASK - 0.5) * 2;
-            const w = (cyrb53(node.text + "width") & MASK) / MASK;
-            const h = (cyrb53(node.text + "height") & MASK) / MASK;
+            const w = (cyrb53(node.text + "width", node.descendantCount) & MASK) / MASK;
+            const h = (cyrb53(node.text + "height", node.descendantCount) & MASK) / MASK;
             return { type: "rect", cx: pos, cy: -pos, hw: w, hh: h };
         }
         // default:
@@ -229,9 +235,6 @@ function invert(
 }
 
 function smoothUnion(a: number, b: number, k: number): number {
-    if (a >= Infinity) return b;
-    if (b >= Infinity) return a;
-
     const h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1);
     return lerp(b, a, h) - k * h * (1 - h);
 }
@@ -309,7 +312,7 @@ function evaluateSDF(uvx: number, uvy: number, sdf: SDFObject): number {
                 sdf.r,
             );
         case "none":
-            return Infinity;
+            return 1e18;
     }
 }
 function centroid(width: number, height: number, sdf: SDFObject) {
@@ -319,12 +322,22 @@ function centroid(width: number, height: number, sdf: SDFObject) {
         for (let x = 0; x < width; x++) {
             let uvx = (x + 0.5) / height * 2 - width / height;
             let uvy = (y + 0.5) / height * 2 - 1;
-            const d = evaluateSDF(uvx, uvy, sdf);
-            if (d < 0) {
-                sx += uvx;
-                sy += uvy;
-                md = Math.max(md, uvx * uvx + uvy * uvy);
-                maxdist = Math.max(maxdist, -d);
+            uvx*=0.5;
+
+
+            const amp = 0.08;
+            const freq = 8.0;
+            const phase = 0.0;
+
+            const wx = uvx + amp * Math.sin(freq * uvy + phase);
+            const wy = uvy;
+
+            const d = evaluateSDF(wx, wy, sdf);
+            if (Math.abs(d) > 0.01) {
+                sx += wx;
+                sy += wy;
+                md = Math.max(md, wx*wx+wy*wy);
+                maxdist = Math.max(maxdist, Math.abs(d));
                 c++;
             }
         }
@@ -336,28 +349,32 @@ function centroid(width: number, height: number, sdf: SDFObject) {
 function render(width: number, height: number, sdf: SDFObject, asciiMap: string) {
     let out = "";
 
-    const [dx, dy, scale, md] = centroid(width * 2, height * 2, sdf);
+    const [dx, dy, scale, md] = centroid(width, height, sdf);
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             let uvx = (x + 0.5) / height * 2 - width / height;
             let uvy = (y + 0.5) / height * 2 - 1;
             uvx *= 1 / 2;
 
-            uvx = uvx * (scale / 1.3) + dx;
-            uvy = uvy * (scale / 1.3) + dy;
+            const amp = 0.08;
+            const freq = 8.0;
+            const phase = 0.0;
 
-            const d = evaluateSDF(uvx, uvy, sdf);
+            const wx = uvx + amp * Math.sin(freq * uvy + phase);
+            const wy = uvy;
 
-            if (d < 0) {
-                const t0 = clamp((-d) / md, 0, 1);
-                const t = Math.pow(t0, 0.8); // optional
-                const idx = Math.round(
-                    t * (asciiMap.length - 1),
-                );
-                out += asciiMap[idx];
-            } else {
-                out += " ";
-            }
+            let d = evaluateSDF(wx, wy, sdf);
+
+            d = Math.abs(d)
+            const t0 = clamp(d / md, 0, 1);
+            const t = Math.pow(t0, 0.8); // optional
+            const idx = Math.round(
+                t * (asciiMap.length - 1),
+            );
+            out += asciiMap[idx];
+            // } else {
+            //     out += " ";
+            // }
         }
         out += "\n";
     }
@@ -391,12 +408,14 @@ const schema = skap.command({
     "file name": skap.positional(0).description("Target file").required(),
     asciiString: skap.string("--ascii-map").description("characters to be used for ascii"),
     grayscaleUnicode: skap.boolean("--grayscale-unicode").description("use grayscale unicode charset <▁▂▃▄▅▆▇█>"),
+    brailleUnicode: skap.boolean("--braille-unicode").description("use braille unicode charset <⠀⠁⠃⠇⠏⠟⠿⣿>"),
     smallAscii: skap.boolean("--small-ascii").description("use small ascii charset <..,:-=+*#%@>"),
     footer: skap.string("--footer").description("message below image").default(""),
     includeEditTime: skap.boolean("-e").description("include edit time below signature"),
     height: skap.number("-h").description("height of image").default(20),
     width: skap.number("-w").description("width of image").default(40),
-    outputOnly: skap.boolean("-O").description("output signature to stdout")
+    outputOnly: skap.boolean("-O").description("output signature to stdout"),
+    debug: skap.boolean("-D").description("output component sdf's to stdout")
 });
 const cmd = schema.parse(Deno.args, {
     customError: (e) => {
@@ -408,16 +427,21 @@ const cmd = schema.parse(Deno.args, {
 const parser = new Parser();
 parser.setLanguage(CppParser as Language);
 
-let STRING = cmd.asciiString ?? " .'`^,:;Il!i~+_-?1)(|\\/tfjrxbkhao*#MW&8%B@$";
+let STRING = cmd.asciiString ?? "  .'`^,:;Il!i~+_-?1)(|\\/tfjrxbkhao*#MW&8%B@$";
 
 if (cmd.grayscaleUnicode)
-    STRING = "▁▂▃▄▅▆▇█";
+    STRING = " ▁▂▃▄▅▆▇█";
+if (cmd.brailleUnicode)
+    STRING = `⠀⠁⠃⠇⠏⠟⠿⣿`;
 if (cmd.smallAscii)
-    STRING = "..,:-=+*#%@";
+    STRING = " ..,:-=+*#%@";
 
 const sourceCode = Deno.readTextFileSync(cmd["file name"]);
 const tree = parser.parse(sourceCode);
 const scene = traverse(tree.rootNode);
+if (cmd.debug) {
+    console.dir(scene, {depth: null})
+}
 
 let output = "";
 output += "// begin signature\n"
