@@ -417,15 +417,38 @@ const schema = skap.command({
     boxCharset: skap.string("-B").description("provide box charset, order: <┌┬┐┤┘┴└├>"),
     footer: skap.string("--footer").description("message below image").default(""),
     asciiString: skap.string("--ascii-map").description("characters to be used for ascii"),
-    grayscaleUnicode: skap.boolean("--grayscale-unicode").description("use grayscale unicode charset <▁▂▃▄▅▆▇█>"),
-    quadrantUnicode: skap.boolean("--quadrant-unicode").description("use quadrant unicode charset < ▖▞▐▟▙▉>"),
-    brailleUnicode: skap.boolean("--braille-unicode").description("use braille unicode charset <⠀⠁⠃⠇⠏⠟⠿⣿>"),
-    chineseCharset: skap.boolean("--chinese").description("use chinese charset <　一八二十八入三仁今公巾外於弔区刹他移慈敗棟郵優翻腫>"),
-    kanjiCharset: skap.boolean("--kanji").description("use kanji charset <　・ㇸ一ㇵヘシミ丁ビ火せ山允汎洪労李和耗奏群陽義慶覇>"),
-    kanaCharset: skap.boolean("--kana").description("use kana charset <　・ㇸㇳノㇸㇱㇷっこャいうパスチゴぞずなぜおゐゑあぼ>"),
-    smallAscii: skap.boolean("--small-ascii").description("use small ascii charset <..,:-=+*#%@>"),
+    charset: skap.string("-c").description("charset to use"),
+    list: skap.boolean("-l").description("list charsets"),
     unicodeBox: skap.boolean("--unicode-box").description("unicode box set <┌─┐│┘─└│>"),
 });
+
+type Charset = { charset: string, fullWidth: boolean };
+const CHARSETS: { [key: string]: Partial<Charset> } = {
+    default: {
+        charset: "  .'`^,:;Il!i~+_-?1)(|\\/tfjrxbkhao*#MW&8%B@$"
+    },
+    smallAscii: {
+        charset: " ..,:-=+*#%@"
+    },
+    grayscaleUnicode: { charset: " ▁▂▃▄▅▆▇█" },
+    quadrantUnicode:  { charset: " ▖▞▐▟▙▉" },
+    braille: {
+        charset: `⠀⠁⠃⠇⠏⠟⠿⣿`,
+    },
+    chinese: { 
+        charset: "　　一八二十八入三仁今公巾外於弔区刹他移慈敗棟郵優翻腫",
+        fullWidth: true,
+    },
+    kanji: {
+        charset: "　　・ㇸ一ㇵヘシミ丁ビ火せ山允汎洪労李和耗奏群陽義慶覇",
+        fullWidth: true
+    },
+    kana: {
+        charset: "　　・ㇸㇳノㇸㇱㇷっこャいうパスチゴぞずなぜおゐゑあぼ",
+        fullWidth: true
+    },
+}
+
 const cmd = schema.parse(Deno.args, {
     customError: (e) => {
         logger.error(e);
@@ -440,29 +463,29 @@ const parser = new Parser();
 parser.setLanguage(CppParser as Language);
 
 let STRING = cmd.asciiString ?? "  .'`^,:;Il!i~+_-?1)(|\\/tfjrxbkhao*#MW&8%B@$";
+if (cmd.list) {
+    logger.info("All available charsets:")
+    for (const key in CHARSETS) {
+        const cs = CHARSETS[key];
+        let str = `${key.padEnd(20, " ")} `;
+        if (cs.charset) str += `<${cs.charset}> `
+        if (cs.fullWidth) str += `(full width)`
+        logger.info(str)
+    }
+    Deno.exit(0);
+}
+if (cmd.charset) {
+    if (cmd.charset in CHARSETS) {
+        const cs = CHARSETS[cmd.charset]
+        if (cs.charset !== undefined)
+            STRING = cs.charset
+        if (cs.fullWidth !== undefined)
+            FULL_WIDTH = cs.fullWidth;
+    } else {
+        logger.error(`No charset named "${cmd.charset}"`)
+    }
+}
 
-if (cmd.grayscaleUnicode)
-    STRING = " ▁▂▃▄▅▆▇█";
-if (cmd.quadrantUnicode)
-    STRING = " ▖▞▐▟▙▉"
-if (cmd.chineseCharset) {
-    STRING = "　　一八二十八入三仁今公巾外於弔区刹他移慈敗棟郵優翻腫"
-    FULL_WIDTH = true;
-}
-if (cmd.kanjiCharset) {
-    STRING = "　　・ㇸ一ㇵヘシミ丁ビ火せ山允汎洪労李和耗奏群陽義慶覇"
-    FULL_WIDTH = true;
-}
-if (cmd.kanaCharset) {
-    STRING = "　　・ㇸㇳノㇸㇱㇷっこャいうパスチゴぞずなぜおゐゑあぼ"
-    FULL_WIDTH = true;
-}
-if (cmd.grayscaleUnicode)
-    STRING = "";
-if (cmd.brailleUnicode)
-    STRING = `⠀⠁⠃⠇⠏⠟⠿⣿`;
-if (cmd.smallAscii)
-    STRING = " ..,:-=+*#%@";
 
 let boxset = "+-+|+-+|";
 if (cmd.boxCharset !== undefined) {
